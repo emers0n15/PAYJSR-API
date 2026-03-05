@@ -1,0 +1,24 @@
+{
+  "name": "payjsr_checkout",
+  "version": "1.0.0",
+  "description": "Simple page to test PayJSR checkout in test mode.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node -c server.js"
+  },
+  "keywords": [
+    "payjsr",
+    "checkout",
+    "test"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.21.0"
+  }
+}
+
+

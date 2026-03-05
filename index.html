@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PayJSR API Integration Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #fff;
+      --surface-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 3rem;
+    }
+
+    /* Logo & Header */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+
+    .logo-text {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* API Key Gate */
+    .api-gate {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .api-gate h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .api-gate p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .api-gate .field {
+      margin-bottom: 1rem;
+    }
+
+    .api-gate label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .api-gate input {
+      width: 100%;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .api-gate input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    .api-gate input:focus {
+      border-color: var(--accent);
+    }
+
+    .api-gate .btn-enter {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .api-gate .btn-enter:hover {
+      background: var(--accent-hover);
+    }
+
+    .api-gate .btn-enter:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .api-gate .error {
+      font-size: 0.8rem;
+      color: var(--danger);
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .api-gate .error.visible {
+      display: block;
+    }
+
+    /* Main content - hidden until API key set */
+    .main-content {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .main-content.visible {
+      display: block;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .toolbar .key-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .toolbar .key-info span {
+      color: var(--success);
+    }
+
+    .toolbar .btn-change {
+      padding: 8px 14px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toolbar .btn-change:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h3 .method {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    .method-post { background: var(--accent); color: white; }
+    .method-get { background: var(--success); color: white; }
+    .method-delete { background: var(--danger); color: white; }
+
+    .card .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .card label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .card input, .card select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .card input:focus, .card select:focus {
+      border-color: var(--accent);
+    }
+
+    .card button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .card button:hover { background: var(--accent-hover); }
+    .card button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .card button.secondary { background: var(--surface-hover); color: var(--text); }
+    .card button.secondary:hover { background: #e2e8f0; }
+    .card button.danger { background: var(--danger); }
+    .card button.danger:hover { background: #dc2626; }
+
+    .response-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+    }
+
+    .response-box.visible { display: block; }
+
+    .steps {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .steps h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #1e40af;
+    }
+
+    .steps ol {
+      padding-left: 1.25rem;
+      font-size: 0.85rem;
+      color: #334155;
+    }
+
+    .steps li { margin-bottom: 0.5rem; }
+
+    .steps a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .steps a:hover { text-decoration: underline; }
+
+    .steps code {
+      background: rgba(59, 130, 246, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+  <script src="https://js.payjsr.com/v1/payjsr.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="logo">
+      <img style="width: 100px; height: 100px;" src="./assets/logo.png" alt="PayJSR" class="logo-image">
+    </div>
+    <p class="subtitle">API Integration Tester</p>
+  </header>
+
+  <!-- API Key Gate -->
+  <div class="api-gate" id="api-gate">
+    <h2>API Key</h2>
+    <p>Enter your Secret Key (sk_test_ or sk_live_) to access the tester. The key is stored locally in your browser and is never sent to any servers other than your local proxy.</p>
+    <div class="field">
+      <label for="api-key-input">Secret Key</label>
+      <input
+        id="api-key-input"
+        type="password"
+        placeholder="sk_test_..."
+        autocomplete="off"
+      />
+    </div>
+    <p class="error" id="api-key-error">Enter a valid key (sk_test_ or sk_live_)</p>
+    <button class="btn-enter" id="btn-enter">Continue</button>
+  </div>
+
+  <!-- Main Content (shown after API key) -->
+  <main class="main-content" id="main-content">
+    <div class="toolbar">
+      <span class="key-info">Chave configurada: <span id="key-preview">sk_***</span></span>
+      <button class="btn-change" id="btn-change-key">Alterar chave</button>
+    </div>
+
+    <div class="steps">
+      <h2>Integration Steps</h2>
+      <ol>
+        <li>Sign up at <a href="https://payjsr.com" target="_blank">payjsr.com</a> → Create a Store</li>
+        <li>Complete onboarding</li>
+        <li>Go to Seller Dashboard → Developer → API Keys</li>
+        <li>Create a Secret Key (sk_test_ for testing)</li>
+        <li>Configure Webhooks for production</li>
+      </ol>
+    </div>
+
+    <section class="section">
+      <h2 class="section-title">Payments & Links</h2>
+      <div class="grid">
+        <div class="card">
+          <h3><span class="method method-post">POST</span> Create Payment</h3>
+          <div class="field"><label>Amount (cents)</label><input id="pay-amount" type="number" value="2999"></div>
+          <div class="field"><label>Currency</label><select id="pay-currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="BRL">BRL</option></select></div>
+          <div class="field"><label>Description</label><input id="pay-desc" value="Test Product"></div>
+          <div class="field"><label>Mode</label><select id="pay-mode"><option value="redirect">Redirect</option><option value="enabled">Enabled</option></select></div>
+          <div class="field"><label>Customer Email</label><input id="pay-email" type="email" placeholder="optional"></div>
+          <button onclick="createPayment()">Create Payment</button>
+          <div id="pay-response" class="response-box"></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="method method-post">POST</span> Create Link</h3>
+          <div class="field"><label>Title</label><input id="link-title" value="Demo Digital Product"></div>
+          <div class="field"><label>Amount</label><input id="link-amount" type="number" value="1999"></div>
+          <div class="field"><label>Currency</label><select id="link-currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div>
+          <div class="field"><label>Billing Type</label><select id="link-billing"><option value="one_time">One Time</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+          <button onclick="createLink()">Create Link</button>
+          <div id="link-response" class="response-box"></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="method method-get">GET</span> Get Link</h3>
+          <div class="field"><label>Link Code</label><input id="get-link-code" placeholder="code"></div>
+          <button onclick="getLink()">Get</button>
+          <div id="get-link-response" class="response-box"></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="method method-delete">DELETE</span> Delete Link</h3>
+          <div class="field"><label>Link ID</label><input id="del-link-id" placeholder="link_id"></div>
+          <button class="danger" onclick="deleteLink()">Delete</button>
+          <div id="del-link-response" class="response-box"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Transactions & Simulation</h2>
+      <div class="grid">
+        <div class="card">
+          <h3><span class="method method-get">GET</span> Transactions</h3>
+          <div class="field"><label>Status</label><select id="txn-status"><option value="">All</option><option value="completed">Completed</option><option value="pending">Pending</option><option value="failed">Failed</option></select></div>
+          <div class="field"><label>Limit</label><input id="txn-limit" type="number" value="10"></div>
+          <button onclick="listTransactions()">Fetch</button>
+          <div id="txn-response" class="response-box"></div>
+        </div>
+
+        <div class="card">
+          <h3><span class="method method-post">POST</span> Simulate Payment</h3>
+          <div class="field"><label>Session Token</label><input id="sim-session" placeholder="sess_..."></div>
+          <div class="field"><label>Email</label><input id="sim-email" value="test@example.com"></div>
+          <div class="field"><label>Outcome</label><select id="sim-outcome"><option value="success">Success</option><option value="failure">Failure</option></select></div>
+          <button onclick="simulatePayment()">Simulate</button>
+          <div id="sim-response" class="response-box"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">SDK Testing</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>openCheckout()</h3>
+          <div class="field"><label>Session ID</label><input id="sdk-session-id" placeholder="sess_..."></div>
+          <div class="field"><label>Modo</label><select id="sdk-mode"><option value="redirect">Redirect</option><option value="popup">Popup</option></select></div>
+          <button onclick="sdkOpenCheckout()">Abrir Checkout</button>
+        </div>
+
+        <div class="card">
+          <h3>createButton()</h3>
+          <div class="field"><label>Session ID</label><input id="sdk-btn-session-id" placeholder="sess_..."></div>
+          <div class="field"><label>Text</label><input id="sdk-btn-text" value="Pay with PayJSR"></div>
+          <button onclick="runCreateButton()">Mount Button</button>
+          <div id="sdk-btn-container"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const STORAGE_KEY = 'payjsr_api_key';
+
+  function getApiKey() {
+    return localStorage.getItem(STORAGE_KEY) || '';
+  }
+
+  function setApiKey(key) {
+    const k = String(key || '').trim();
+    if (k) localStorage.setItem(STORAGE_KEY, k);
+    else localStorage.removeItem(STORAGE_KEY);
+    return k;
+  }
+
+  function isValidKey(k) {
+    return /^sk_(test|live)_[a-zA-Z0-9]+$/.test(String(k).trim());
+  }
+
+  function showMain() {
+    const key = getApiKey();
+    if (!isValidKey(key)) return;
+    document.getElementById('api-gate').style.display = 'none';
+    document.getElementById('main-content').classList.add('visible');
+    document.getElementById('key-preview').textContent = key.slice(0, 12) + '…';
+  }
+
+  function showGate() {
+    document.getElementById('api-gate').style.display = 'block';
+    document.getElementById('main-content').classList.remove('visible');
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('api-key-error').classList.remove('visible');
+  }
+
+  document.getElementById('btn-enter').onclick = function() {
+    const input = document.getElementById('api-key-input');
+    const err = document.getElementById('api-key-error');
+    const key = input.value.trim();
+    if (!key) {
+      err.textContent = 'Please enter your API key.';
+      err.classList.add('visible');
+      return;
+    }
+    if (!isValidKey(key)) {
+      err.textContent = 'Invalid key. Use sk_test_ or sk_live_...';
+      err.classList.add('visible');
+      return;
+    }
+    setApiKey(key);
+    err.classList.remove('visible');
+    showMain();
+  };
+
+  document.getElementById('btn-change-key').onclick = showGate;
+
+  document.getElementById('api-key-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('btn-enter').click();
+  });
+
+  // On load: show gate or main
+  if (isValidKey(getApiKey())) showMain();
+  else document.getElementById('api-gate').style.display = 'block';
+
+  function apiHeaders() {
+    const key = getApiKey();
+    const h = { 'Content-Type': 'application/json' };
+    if (key) h['x-api-key'] = key;
+    return h;
+  }
+
+  async function apiCall(method, url, body, responseBoxId) {
+    const box = document.getElementById(responseBoxId);
+    box.classList.add('visible');
+    try {
+      const opts = { method, headers: apiHeaders() };
+      if (body && method !== 'GET') opts.body = JSON.stringify(body);
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      box.textContent = JSON.stringify(data, null, 2);
+      return data;
+    } catch (err) {
+      box.textContent = err.message;
+    }
+  }
+
+  async function createPayment() {
+    const data = await apiCall('POST', '/api/create-payment', {
+      amount: parseInt(document.getElementById('pay-amount').value) || 2999,
+      currency: document.getElementById('pay-currency').value,
+      description: document.getElementById('pay-desc').value,
+      mode: document.getElementById('pay-mode').value,
+      customer_email: document.getElementById('pay-email').value || undefined,
+      success_url: window.location.origin + '/success.html',
+      cancel_url: window.location.origin + '/'
+    }, 'pay-response');
+    if (data?.data?.data?.payment_id) {
+      const id = data.data.data.payment_id;
+      document.getElementById('sim-session').value = id;
+      document.getElementById('sdk-session-id').value = id;
+      document.getElementById('sdk-btn-session-id').value = id;
+    }
+  }
+
+  async function createLink() {
+    await apiCall('POST', '/api/create-link', {
+      title: document.getElementById('link-title').value,
+      amount: parseInt(document.getElementById('link-amount').value) || 1999,
+      currency: document.getElementById('link-currency').value,
+      billing_type: document.getElementById('link-billing').value
+    }, 'link-response');
+  }
+
+  function getLink() {
+    const code = document.getElementById('get-link-code').value;
+    apiCall('GET', '/api/get-link/' + encodeURIComponent(code), null, 'get-link-response');
+  }
+
+  function deleteLink() {
+    const id = document.getElementById('del-link-id').value;
+    apiCall('DELETE', '/api/delete-link/' + encodeURIComponent(id), null, 'del-link-response');
+  }
+
+  function listTransactions() {
+    const status = document.getElementById('txn-status').value;
+    const limit = document.getElementById('txn-limit').value;
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString() ? '?' + params : '';
+    apiCall('GET', '/api/transactions' + qs, null, 'txn-response');
+  }
+
+  function simulatePayment() {
+    apiCall('POST', '/api/simulate-payment', {
+      session_token: document.getElementById('sim-session').value || undefined,
+      customer_email: document.getElementById('sim-email').value,
+      simulate_failure: document.getElementById('sim-outcome').value === 'failure'
+    }, 'sim-response');
+  }
+
+  function sdkOpenCheckout() {
+    const sessionId = document.getElementById('sdk-session-id').value;
+    const mode = document.getElementById('sdk-mode').value;
+    PayJSR.openCheckout(sessionId, { mode });
+  }
+
+  function runCreateButton() {
+    const sessionId = document.getElementById('sdk-btn-session-id').value;
+    const text = document.getElementById('sdk-btn-text').value;
+    PayJSR.createButton('sdk-btn-container', sessionId, { text });
+  }
+</script>
+</body>
+</html>
