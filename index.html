@@ -417,8 +417,8 @@
   <!-- Main Content (shown after API key) -->
   <main class="main-content" id="main-content">
     <div class="toolbar">
-      <span class="key-info">Chave configurada: <span id="key-preview">sk_***</span></span>
-      <button class="btn-change" id="btn-change-key">Alterar chave</button>
+      <span class="key-info">API key configured: <span id="key-preview">sk_***</span></span>
+      <button class="btn-change" id="btn-change-key">Change key</button>
     </div>
 
     <div class="steps">
@@ -449,7 +449,7 @@
         <div class="card">
           <h3><span class="method method-post">POST</span> Create Link</h3>
           <div class="field"><label>Title</label><input id="link-title" value="Demo Digital Product"></div>
-          <div class="field"><label>Amount</label><input id="link-amount" type="number" value="1999"></div>
+          <div class="field"><label>Amount (cents, min 100)</label><input id="link-amount" type="number" min="100" step="1" value="1999"></div>
           <div class="field"><label>Currency</label><select id="link-currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div>
           <div class="field"><label>Billing Type</label><select id="link-billing"><option value="one_time">One Time</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
           <button onclick="createLink()">Create Link</button>
@@ -500,8 +500,8 @@
         <div class="card">
           <h3>openCheckout()</h3>
           <div class="field"><label>Session ID</label><input id="sdk-session-id" placeholder="sess_..."></div>
-          <div class="field"><label>Modo</label><select id="sdk-mode"><option value="redirect">Redirect</option><option value="popup">Popup</option></select></div>
-          <button onclick="sdkOpenCheckout()">Abrir Checkout</button>
+          <div class="field"><label>Mode</label><select id="sdk-mode"><option value="redirect">Redirect</option><option value="popup">Popup</option></select></div>
+          <button onclick="sdkOpenCheckout()">Open Checkout</button>
         </div>
 
         <div class="card">
@@ -585,6 +585,34 @@
     return h;
   }
 
+  function setResponseText(responseBoxId, text) {
+    const box = document.getElementById(responseBoxId);
+    box.classList.add('visible');
+    box.textContent = String(text);
+  }
+
+  // Reads amount from input and returns integer cents.
+  // Convenience:
+  // - "1.99" => 199 cents (dollars)
+  // - "1"    => 100 cents (assumes dollars when < 100)
+  // - "1999" => 1999 cents
+  function readAmountCents(inputId, fallbackCents) {
+    const el = document.getElementById(inputId);
+    const raw = String(el?.value ?? '').trim();
+    if (!raw) return fallbackCents;
+
+    const normalized = raw.replace(',', '.');
+    const n = Number(normalized);
+    if (!Number.isFinite(n)) return null;
+
+    const hasDecimal = normalized.includes('.');
+    if (hasDecimal) return Math.round(n * 100);
+
+    const intLike = Math.round(n);
+    if (intLike > 0 && intLike < 100) return intLike * 100;
+    return intLike;
+  }
+
   async function apiCall(method, url, body, responseBoxId) {
     const box = document.getElementById(responseBoxId);
     box.classList.add('visible');
@@ -601,8 +629,17 @@
   }
 
   async function createPayment() {
+    const amount = readAmountCents('pay-amount', 2999);
+    if (amount == null) {
+      setResponseText('pay-response', 'Invalid amount. Use cents (e.g., 1999) or dollars with decimals (e.g., 19.99).');
+      return;
+    }
+    if (amount < 100) {
+      setResponseText('pay-response', 'Amount must be at least 100 cents ($1.00).');
+      return;
+    }
     const data = await apiCall('POST', '/api/create-payment', {
-      amount: parseInt(document.getElementById('pay-amount').value) || 2999,
+      amount,
       currency: document.getElementById('pay-currency').value,
       description: document.getElementById('pay-desc').value,
       mode: document.getElementById('pay-mode').value,
@@ -619,9 +656,18 @@
   }
 
   async function createLink() {
+    const amount = readAmountCents('link-amount', 1999);
+    if (amount == null) {
+      setResponseText('link-response', 'Invalid amount. Use cents (e.g., 1999) or dollars with decimals (e.g., 19.99).');
+      return;
+    }
+    if (amount < 100) {
+      setResponseText('link-response', 'Amount must be at least 100 cents ($1.00).');
+      return;
+    }
     await apiCall('POST', '/api/create-link', {
       title: document.getElementById('link-title').value,
-      amount: parseInt(document.getElementById('link-amount').value) || 1999,
+      amount,
       currency: document.getElementById('link-currency').value,
       billing_type: document.getElementById('link-billing').value
     }, 'link-response');
